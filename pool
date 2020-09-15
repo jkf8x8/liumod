@@ -1,0 +1,33 @@
+package pool
+
+type Pool struct{
+	MaxLimit int
+	Tch chan struct{}
+}
+
+func NewPool(max int) *Pool{
+	p := &Pool{}
+	p.MaxLimit =max
+	p.Tch = make(chan struct{},max)
+
+	for i:=0;i<max;i++{
+		p.Tch<- struct{}{}
+	}
+	return p
+}
+
+func (p *Pool) Work(fn func()){
+	t:= <-p.Tch
+	go func(){
+		fn()
+		p.Tch<-t
+
+	}()
+}
+
+func (gp *Pool) Wait(){
+	for i:=0;i<gp.MaxLimit;i++{
+		<-gp.Tch
+	}
+	close(gp.Tch)
+}
