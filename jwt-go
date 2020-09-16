@@ -1,0 +1,42 @@
+package utilss
+
+import (
+	"errors"
+	"fmt"
+	"github.com/dgrijalva/jwt-go"
+)
+
+var jwtSecret []byte = []byte("abc")
+
+func CreateToken(uname,passwd string)(string,error){
+	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"name":  uname,
+		"passwd":passwd,
+	})
+	token, err := claims.SignedString(jwtSecret)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+func ParseToken(tokenStr string) (jwt.MapClaims,error){
+	token,err :=jwt.Parse(tokenStr,func(token *jwt.Token)(interface{}, error){
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return jwtSecret, nil
+	})
+
+	if err!=nil{
+		panic(errors.New("parse token error"))
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		fmt.Println("tokenparse",claims)
+		return claims,nil
+	} else {
+		fmt.Println(err)
+		return nil,errors.New("parse token failed")
+	}
+}
